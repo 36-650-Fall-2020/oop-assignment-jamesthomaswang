@@ -1,0 +1,14 @@
+{
+  "tests": [
+    {
+      "name": "Check if application is runnable",
+      "setup": "",
+      "run": "python src/main.py",
+      "input": "",
+      "output": "",
+      "comparison": "included",
+      "timeout": 10,
+      "points": null
+    }
+  ]
+}
