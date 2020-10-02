@@ -1,7 +1,14 @@
-# main.py
-# This is your code's starting point
-# Follow the guidelines in the homework document
-# Don't forget to add data folder for your data
-# Replace the following line with real application code
+"""A initialization script for the NY Times COVID-19 Dataset GUI.
 
-print("Hello! This is the starter code!")
+Leave one blank line.  The rest of this docstring should contain an
+overall description of the module or program.  Optionally, it may also
+contain a brief description of exported classes and functions and/or usage
+examples.
+
+  Typical usage example:
+
+  foo = ClassFoo()
+  bar = foo.FunctionBar()
+"""
+
+# TODO
