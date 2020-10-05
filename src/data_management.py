@@ -1,6 +1,3 @@
-from functools import lru_cache
-from abc import ABC, abstractmethod
-import pandas as pd
 """These classes read data and order it into a region tree.
 
 What datasets do we want? We want 3 things:
@@ -57,6 +54,10 @@ attributes:
     print(county.region("42003").date("2020-09-27")())
 """
 
+from functools import lru_cache
+from abc import ABC, abstractmethod
+import pandas as pd
+
 
 class Data(ABC):
     """Defines lazy, callable, read-only, parameter-based singleton pattern.
@@ -101,7 +102,25 @@ class Data(ABC):
         return self._data
 
 
-class Filter(Data, ABC):
+class CovidData(Data, ABC):
+    @property
+    def date(self):
+        return self()["date"]
+
+    @property
+    def fips(self):
+        return self()["fips"]
+
+    @property
+    def cases(self):
+        return self()["cases"]
+
+    @property
+    def deaths(self):
+        return self()["deaths"]
+
+
+class Filter(CovidData, ABC):
     """Defines pattern that filters outer data rows based on a column."""
     @property
     @abstractmethod
@@ -134,8 +153,12 @@ class Filter(Data, ABC):
         """
         return filter_col == filter_value
 
+    @property
+    def state(self):
+        return self()["state"]
 
-class Level(Data):
+
+class Level(CovidData):
     def __init__(self, filepath):
         self.filepath = filepath
 
