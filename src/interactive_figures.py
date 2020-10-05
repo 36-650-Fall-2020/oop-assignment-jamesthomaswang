@@ -54,19 +54,25 @@ class Figure(ABC):
         return self.fig
 
     def _set_data(self, data_manager):
-        if not isinstance(data_manager, Level.Region.Date):
-            raise TypeError("Figures expect data from a specific date.")
+        if isinstance(data_manager, Level.Region.Date):
+            self.date_data = data_manager
+            self.date = self.date_data.filter
 
-        self.date_data = data_manager
-        self.date = self.date_data.filter
-
-        self.region_data = data_manager.outer
-        self.fips = self.region_data.filter
+            self.region_data = data_manager.outer
+            self.fips = self.region_data.filter
+        elif isinstance(data_manager, Level.Region):
+            self.region_data = data_manager
+            self.fips = self.region_data.filter
 
         if self.fips == "":
             self.region_name = "the United States"
-        else:
+        elif not data_manager().empty:
             self.region_name = data_manager.state.iat[0]
+            if len(self.fips) > 2:
+                self.region_name = "{}, {}".format(
+                    data_manager()["county"].iat[0],
+                    self.region_name
+                )
 
     def update(self, data_manager=None):
         if data_manager is not None:
@@ -140,10 +146,13 @@ class Choropleth(Figure):
         }
 
         layout = {
-            "title": {"text": "{} in {} on {}".format(
-                col_info["col_text"],
-                self.region_name,
-                self.date)},
+            "title": {"text": ("{} in {}<br>"
+                               "on {}<br>"
+                               "<em>Click on a region to see more data.</em>"
+                               ).format(
+                                   col_info["col_text"],
+                                   self.region_name,
+                                   self.date)},
             "geo": {"fitbounds": "locations"}
         }
 
@@ -158,15 +167,44 @@ class Choropleth(Figure):
             layout["geo"]["projection"] = {"scale": 4}
 
         self.fig.update_traces(overwrite=True,
+                               selector={"type": "choropleth"},
                                **trace)
-
         self.fig.update_layout(**layout)
 
 
-"""
-gjson = GeoJSONManager("../data/gz_2010_us_040_00_20m.json")
-gjson()
+class LineFigure(Figure):
+    def __init__(self, data_manager):
+        self.traces = [
+            go.Scatter(name="Cases", mode="lines",
+                       marker_line_color="rgb(8,48,107)"),
+            go.Scatter(name="Deaths", mode="lines",
+                       marker_line_color="rgb(103,0,13)")]
+        layout = {
+            "title": {"text": "Building..."}
+        }
 
-df = Level("../data/us-states.csv").region().date("2020-09-27")
-cp = Choropleth(gjson, df)
-"""
+        super().__init__(data_manager, self.traces, layout)
+
+    def update(self, data_manager=None, col=None):
+        super().update(data_manager)
+
+        self.fig.update_traces(overwrite=True,
+                               selector={"name": "Cases"},
+                               x=self.region_data()["date"],
+                               y=self.region_data.cases)
+
+        self.fig.update_traces(overwrite=True,
+                               selector={"name": "Deaths"},
+                               x=self.region_data()["date"],
+                               y=self.region_data.deaths)
+
+        self.fig.update_layout(
+            title=("Number of Cases & Deaths from COVID-19<br>"
+                   "in {}<br>"
+                   "<em>Click to select the date represented<br>"
+                   "in the map data.</em>"
+                   ).format(self.region_name),
+            xaxis_title="Date",
+            yaxis_title="Number of Cases/Deaths",
+            hovermode="x unified"
+        )
